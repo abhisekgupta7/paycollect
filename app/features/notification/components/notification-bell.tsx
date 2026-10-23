@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Bell } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { Bell, Check, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { markNotificationReadAction } from "../actions/mark-notification-read";
 
 type NotificationItem = {
   id: string;
@@ -11,7 +12,7 @@ type NotificationItem = {
   type: string;
   message: string;
   isRead: boolean;
-  createdAt: Date;
+  createdAt: Date | string;
   paymentId: string | null;
   paymentStatus: string | null;
   proofUrl: string | null;
@@ -40,17 +41,47 @@ export default function NotificationBell({
   notifications,
 }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [items, setItems] = useState(notifications);
+  const [remainingUnread, setRemainingUnread] = useState(unreadCount);
+  const [isPending, startTransition] = useTransition();
 
-  const hasUnread = unreadCount > 0;
+  const hasUnread = remainingUnread > 0;
 
-  const sortedNotifications = useMemo(() => notifications, [notifications]);
+  const sortedNotifications = useMemo(
+    () => [...items].sort((a, b) => Number(new Date(b.createdAt)) - Number(new Date(a.createdAt))),
+    [items],
+  );
+
+  function markAsRead(notificationId: string) {
+    const notification = items.find((item) => item.id === notificationId);
+    if (!notification || notification.isRead) return;
+
+    setItems((current) =>
+      current.map((item) =>
+        item.id === notificationId ? { ...item, isRead: true } : item,
+      ),
+    );
+    setRemainingUnread((count) => Math.max(0, count - 1));
+
+    startTransition(async () => {
+      const result = await markNotificationReadAction(notificationId);
+      if (!result.success) {
+        setItems((current) =>
+          current.map((item) =>
+            item.id === notificationId ? { ...item, isRead: false } : item,
+          ),
+        );
+        setRemainingUnread((count) => count + 1);
+      }
+    });
+  }
 
   return (
     <div className="relative">
       <Button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-muted-foreground transition-colors hover:bg-white/10"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-[#e4e7ec] bg-white text-[#667085] transition-colors hover:bg-[#f7f8fa]"
       >
         <Bell className="h-4 w-4" />
         {hasUnread && (
@@ -59,18 +90,18 @@ export default function NotificationBell({
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 top-11 z-50 w-95 rounded-xl border border-white/10 bg-[#0f141b] p-3 shadow-xl">
+        <div className="absolute right-0 top-11 z-50 w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-[#e4e7ec] bg-white p-3 shadow-xl">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-sm font-semibold text-[#172033]">
               Notifications
             </p>
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-sm font-semibold text-[#243b64]">
               <Link href="/dashboard/payments">
-                See all
+                <span className="inline-flex items-center gap-1">See all <ExternalLink className="h-3.5 w-3.5" /></span>
               </Link>
             </p>
-            <p className="text-xs text-muted-foreground">
-              Unread: {unreadCount}
+            <p className="text-xs text-[#667085]">
+              Unread: {remainingUnread}
             </p>
           </div>
 
@@ -84,10 +115,10 @@ export default function NotificationBell({
             {sortedNotifications.map((notification) => (
               <div
                 key={notification.id}
-                className="rounded-lg border border-white/10 bg-white/5 p-3"
+                className={`rounded-lg border p-3 ${notification.isRead ? "border-[#e4e7ec] bg-[#f8fafc]" : "border-[#cbd8ee] bg-[#f3f6fc]"}`}
               >
                 <div className="mb-2 flex items-start justify-between gap-2">
-                  <p className="text-sm text-foreground">
+                  <p className="text-sm text-[#172033]">
                     {notification.message}
                   </p>
                   {!notification.isRead && (
@@ -106,7 +137,17 @@ export default function NotificationBell({
                     <span>• {notification.paymentStatus}</span>
                   )}
                 </div>
-
+                {!notification.isRead && (
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => markAsRead(notification.id)}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-[#243b64] hover:underline disabled:opacity-50"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    Mark as read
+                  </button>
+                )}
               </div>
             ))}
           </div>

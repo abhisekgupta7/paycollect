@@ -51,7 +51,7 @@ export async function getDashboardSummary(
           c.phone,
           0::bigint AS remaining_balance
         FROM customers c
-        WHERE c.organization_id = ${organizationId}
+        WHERE c."organizationId" = ${organizationId}
       ),
       payment_totals AS (
         SELECT
@@ -60,14 +60,14 @@ export async function getDashboardSummary(
           COUNT(*) FILTER (WHERE p.status = 'PENDING')::bigint AS pending_payment_count,
           COUNT(*)::bigint AS total_payment_count
         FROM payments p
-        WHERE p.organization_id = ${organizationId}
+        WHERE p."organizationId" = ${organizationId}
       ),
       ledger_totals AS (
         SELECT
           COALESCE(SUM(CASE WHEN l.type = 'CREDIT' THEN l.amount ELSE -l.amount END), 0)::bigint AS ledger_balance,
           COUNT(*)::bigint AS ledger_entry_count
         FROM ledger_entries l
-        WHERE l.organization_id = ${organizationId}
+        WHERE l."organizationId" = ${organizationId}
       )
       SELECT
         (SELECT COUNT(*) FROM customer_balances)::bigint AS retailer_count,
@@ -99,11 +99,11 @@ export async function getDashboardSummary(
                 p.amount,
                 p.status,
                 c.name AS "customerName",
-                p.created_at AS "createdAt"
+                p."createdAt" AS "createdAt"
               FROM payments p
-              LEFT JOIN customers c ON c.id = p.customer_id
-              WHERE p.organization_id = ${organizationId}
-              ORDER BY p.created_at DESC
+              LEFT JOIN customers c ON c.id = p."customerId"
+              WHERE p."organizationId" = ${organizationId}
+              ORDER BY p."createdAt" DESC
               LIMIT 5
             ) payment
           ),
