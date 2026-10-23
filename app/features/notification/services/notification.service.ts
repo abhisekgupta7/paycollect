@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { notificationTable } from "@/lib/db/schema";
+import { sendOrganizationPush } from "@/lib/web-push";
 
 export async function createNotification(
   orgId: string,
@@ -21,6 +22,14 @@ export async function createNotification(
         updatedAt: now,
       })
       .returning();
+
+    if (created) {
+      await sendOrganizationPush(orgId, {
+        title: "PayCollect update",
+        body: message.replace(/PAYMENT_ID:[0-9a-fA-F-]{36}/, "").trim(),
+        url: "/dashboard",
+      });
+    }
 
     return created;
   } catch (error) {

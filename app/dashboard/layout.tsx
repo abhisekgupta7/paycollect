@@ -7,6 +7,7 @@ import { getOrganizationById, verifyMembership } from "@/app/features/auth/servi
 import DashboardSignOutButton from "@/components/Utility/DashboardSignOutButton";
 import NotificationBell from "@/app/features/notification/components/notification-bell";
 import { getDashboardNotifications } from "@/app/features/notification/actions/get-dashboard-notifications";
+import PwaManager from "@/components/Utility/PwaManager";
 
 const navItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutGrid },
@@ -37,7 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <DashboardSignOutButton />
           <div className="mt-4 flex items-center gap-3 border-t border-[#e4e7ec] pt-4"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef2fa] text-sm font-semibold text-[#243b64]">{session.user.name?.slice(0, 1).toUpperCase()}</div><div className="min-w-0"><p className="truncate text-sm font-medium">{session.user.name}</p><p className="text-xs text-[#98a2b3]">{membership.role}</p></div></div>
         </aside>
-        <main className="min-w-0"><header className="flex h-16 items-center justify-between border-b border-[#e4e7ec] bg-white px-5 sm:px-8"><div className="hidden items-center gap-2 text-sm text-[#667085] sm:flex"><span>Workspace</span><span>/</span><span className="font-medium text-[#172033]">Overview</span></div><div className="flex w-full items-center justify-end gap-2 sm:w-auto"><div className="hidden items-center gap-2 rounded-lg border border-[#e4e7ec] bg-[#f7f8fa] px-3 py-2 text-sm text-[#98a2b3] md:flex"><Search className="h-4 w-4" />Search retailers, payments...</div><NotificationBell unreadCount={notifications.unreadCount} notifications={notifications.notifications} /></div></header><nav className="flex gap-1 overflow-x-auto border-b border-[#e4e7ec] bg-white px-4 py-2 lg:hidden">{navItems.map(({ label, href, icon: Icon }) => <Link key={label} href={href} className="inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-[#667085] hover:bg-[#f7f8fa] hover:text-[#243b64]"><Icon className="h-3.5 w-3.5" />{label}</Link>)}</nav>{children}</main>
+        <main className="min-w-0"><header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-[#e4e7ec] bg-white px-5 py-3 sm:px-8"><div className="hidden items-center gap-2 text-sm text-[#667085] sm:flex"><span>Workspace</span><span>/</span><span className="font-medium text-[#172033]">Overview</span></div><div className="flex w-full items-center justify-between gap-2 sm:w-auto"><PwaManager /><div className="hidden items-center gap-2 rounded-lg border border-[#e4e7ec] bg-[#f7f8fa] px-3 py-2 text-sm text-[#98a2b3] md:flex"><Search className="h-4 w-4" />Search retailers, payments...</div><NotificationBell unreadCount={notifications.unreadCount} notifications={notifications.notifications} /></div></header><nav className="flex gap-1 overflow-x-auto border-b border-[#e4e7ec] bg-white px-4 py-2 lg:hidden">{navItems.map(({ label, href, icon: Icon }) => <Link key={label} href={href} className="inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-[#667085] hover:bg-[#f7f8fa] hover:text-[#243b64]"><Icon className="h-3.5 w-3.5" />{label}</Link>)}</nav>{children}</main>
       </div>
     </div>
   );

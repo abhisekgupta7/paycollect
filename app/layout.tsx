@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/sessionProvider";
@@ -17,6 +17,19 @@ export const metadata: Metadata = {
   ),
   title: "PayCollect | Recover retailer payments",
   description: "Receivables and payment recovery for wholesalers.",
+  applicationName: "PayCollect",
+  appleWebApp: {
+    capable: true,
+    title: "PayCollect",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#243b64",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

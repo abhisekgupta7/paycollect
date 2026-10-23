@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
 import { getAllCustomersForOrg } from "@/app/features/customer/actions/get-all-customers";
+import { getActiveOrgId } from "@/app/features/auth/services/org-context.service";
+import SharePaymentLink from "./SharePaymentLink";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -13,6 +15,7 @@ function formatCurrency(amount: number) {
 export default async function RetailersPage() {
   const result = await getAllCustomersForOrg();
   const retailers = result.success ? result.customers : [];
+  const organizationId = await getActiveOrgId();
 
   return (
     <div className="space-y-6 px-5 py-7 sm:px-8">
@@ -34,6 +37,15 @@ export default async function RetailersPage() {
           Add retailer
         </Link>
       </div>
+      {organizationId && (
+        <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#dbe4f2] bg-[#eef4ff] p-4">
+          <div>
+            <p className="text-sm font-semibold text-[#243b64]">Share your payment page</p>
+            <p className="mt-1 text-xs text-[#667085]">Send this secure tenant link to retailers. They verify their registered phone before submitting proof.</p>
+          </div>
+          <SharePaymentLink organizationId={organizationId} />
+        </section>
+      )}
       <section className="overflow-hidden rounded-xl border border-[#e4e7ec] bg-white">
         <div className="border-b border-[#e4e7ec] px-5 py-4">
           <p className="text-sm font-semibold text-[#172033]">
@@ -71,6 +83,7 @@ export default async function RetailersPage() {
                   </p>
                   <p className="text-xs text-[#b7791f]">Outstanding</p>
                 </div>
+                {organizationId && <SharePaymentLink organizationId={organizationId} retailerName={retailer.name} />}
               </div>
             ))}
           </div>

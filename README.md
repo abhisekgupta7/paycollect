@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PayCollect
+
+PayCollect is a multi-tenant receivables and payment-recovery app for
+wholesalers. Owners can create retailer accounts, share a tenant-specific
+payment page, and review submitted payment proofs from the dashboard.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and start the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in a browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## PWA and push notifications
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+PayCollect includes an installable PWA manifest, a service worker for the app
+shell, and web push notifications for authenticated dashboard users. Push
+notifications require HTTPS in deployed environments; localhost is supported
+for development.
 
-## Learn More
+Generate VAPID keys with the installed `web-push` package:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npx web-push generate-vapid-keys
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Add the generated values to the deployment environment:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```env
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:you@example.com
+NEXT_PUBLIC_APP_URL=https://your-domain.example
+```
 
-## Deploy on Vercel
+Owners and admins can then use **Enable alerts** in the dashboard header.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Retailer payment links
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Each workspace has a secure tenant payment page:
+
+```text
+https://your-domain.example/pay/<organization-id>
+```
+
+The Retailers page provides **Copy link**, **WhatsApp**, and native **Share**
+buttons. WhatsApp uses the free `wa.me` link flow; it does not require the
+WhatsApp Business API or a paid messaging provider. The retailer still has to
+verify the phone number registered for that workspace before submitting proof.
+Submitted proofs create an owner notification and remain `PENDING` until
+approved in the dashboard.
+
+## Validation
+
+```bash
+npm run lint
+npm run build
+```
