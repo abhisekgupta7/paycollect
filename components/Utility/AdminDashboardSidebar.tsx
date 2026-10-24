@@ -71,6 +71,7 @@ export default function AdminDashboardSidebar({
           {!collapsed && <span><span className="block truncate text-sm font-semibold text-foreground">PayCollect</span><span className="block text-xs text-muted-foreground">Platform control</span></span>}
         </Link>
         <button type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-muted-foreground hover:bg-white/5 lg:hidden"><X className="h-5 w-5" /></button>
+        <button type="button" onClick={toggleCollapsed} aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} title={collapsed ? "Expand navigation" : "Collapse navigation"} className="hidden rounded-lg p-2 text-muted-foreground hover:bg-white/5 hover:text-foreground lg:block">{collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}</button>
       </div>
       <div className={`mx-3 rounded-xl border border-white/10 bg-white/5 ${collapsed ? "p-2" : "px-3 py-2.5"}`}>
         {collapsed ? <span className="block text-center text-xs font-semibold text-emerald-300" title="Platform admin">A</span> : <><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Workspace</p><p className="mt-1 text-sm font-medium text-foreground">Platform admin</p></>}
@@ -87,7 +88,7 @@ export default function AdminDashboardSidebar({
   );
 
   return <>
-    <aside className={`hidden border-r border-white/10 bg-[#0c1116]/90 transition-[width] duration-200 lg:block ${collapsed ? "w-[76px]" : "w-[248px]"}`}>{navigation}<button type="button" onClick={toggleCollapsed} aria-label={collapsed ? "Expand navigation" : "Collapse navigation"} title={collapsed ? "Expand navigation" : "Collapse navigation"} className="absolute bottom-5 left-3 hidden rounded-lg border border-white/10 bg-[#0c1116] p-2 text-muted-foreground hover:text-foreground lg:block">{collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}</button></aside>
+    <aside className={`hidden border-r border-white/10 bg-[#0c1116]/90 transition-[width] duration-200 lg:block ${collapsed ? "w-[76px]" : "w-[248px]"}`}>{navigation}</aside>
     <button type="button" onClick={() => setMobileOpen(true)} aria-label="Open navigation" className="fixed left-4 top-3 z-30 rounded-xl border border-white/10 bg-[#0c1116] p-2.5 text-emerald-300 shadow-sm lg:hidden"><Menu className="h-5 w-5" /></button>
     {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><button type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-black/60" /><aside className="relative h-full w-[280px] bg-[#0c1116] shadow-xl">{navigation}</aside></div>}
   </>;
