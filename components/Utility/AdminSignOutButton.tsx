@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
-export default function AdminSignOutButton() {
+export default function AdminSignOutButton({ collapsed = false }: { collapsed?: boolean }) {
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -26,10 +26,12 @@ export default function AdminSignOutButton() {
     <Button
       onClick={handleSignOut}
       variant="outline"
-      className="w-full border-white/10 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+      aria-label="Sign out"
+      title={collapsed ? "Sign out" : undefined}
+      className={`w-full border-white/10 text-red-400 hover:bg-red-500/10 hover:text-red-300 ${collapsed ? "px-2" : ""}`}
     >
-      <LogOut className="h-4 w-4 mr-2" />
-      Sign Out
+      <LogOut className={`h-4 w-4 ${collapsed ? "" : "mr-2"}`} />
+      {!collapsed && "Sign Out"}
     </Button>
   );
 }

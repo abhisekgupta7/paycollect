@@ -53,8 +53,8 @@ export async function submitSubscriptionPaymentAction(proofUrl: string) {
       };
     }
 
-    // ✅ Fixed amount - Rs. 15,000 in paisa
-    const amount = 15 * 100 * 1000;
+    // ✅ Fixed amount - Rs. 7999 in paisa
+    const amount = 7.99 * 100 * 1000;
 
     // ✅ Create payment record with PLATFORM context
     const payment = await db

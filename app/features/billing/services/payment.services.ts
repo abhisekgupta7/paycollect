@@ -1,6 +1,6 @@
 // features/billing/services/payment.services.ts
 
-import { db } from "@/lib/db/client";
+import { db, withDatabaseRetry } from "@/lib/db/client";
 import { subscriptionsTable, paymentsTable } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { invalidateOrganizationCaches } from "@/lib/cache";
@@ -154,7 +154,7 @@ export async function submitManualPayment(
   organizationId: string,
   userId: string,
   proofUrl: string,
-  amount: number = 100 * 1000 * 15, // Rs. 15,000 in paisa (default)
+  amount: number = 100 * 1000 * 7999, // Rs. 7999 in paisa (default)
   currency: string = "NPR",
   customerId?: string,
 ) {
@@ -203,11 +203,15 @@ export async function submitManualPayment(
  */
 export async function getPayment(paymentId: string) {
   try {
-    const payment = await db
-      .select()
-      .from(paymentsTable)
-      .where(eq(paymentsTable.id, paymentId))
-      .limit(1);
+    const payment = await withDatabaseRetry(
+      () =>
+        db
+          .select()
+          .from(paymentsTable)
+          .where(eq(paymentsTable.id, paymentId))
+          .limit(1),
+      "Fetching payment",
+    );
 
     return payment[0] || null;
   } catch (error) {
@@ -245,14 +249,18 @@ export async function updatePaymentStatus(
   status: "VERIFIED" | "REJECTED",
 ) {
   try {
-    const updated = await db
-      .update(paymentsTable)
-      .set({
-        status,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentsTable.id, paymentId))
-      .returning();
+    const updated = await withDatabaseRetry(
+      () =>
+        db
+          .update(paymentsTable)
+          .set({
+            status,
+            updatedAt: new Date(),
+          })
+          .where(eq(paymentsTable.id, paymentId))
+          .returning(),
+      "Updating payment status",
+    );
 
     if (!updated[0]) {
       throw new Error("Payment not found");

@@ -238,6 +238,7 @@ const ImageUploader = ({
             alt="Uploaded preview"
             width={64}
             height={64}
+            unoptimized
             className="h-16 w-16 rounded-md object-cover"
           />
           <div className="flex-1 min-w-0">

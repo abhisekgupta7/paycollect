@@ -134,6 +134,7 @@ export default function PaymentReviewActions({
                         alt="Payment proof screenshot"
                         fill
                         sizes="(max-width: 768px) 100vw, 50vw"
+                        unoptimized
                         className="object-contain"
                       />
                     </div>

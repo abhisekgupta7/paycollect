@@ -55,6 +55,7 @@ export default function SubscriptionPage() {
               alt="Payment QR Code"
               width={308}
               height={308}
+              priority
               className="h-44 w-44 rounded-xl bg-white p-2 sm:h-52 sm:w-52"
             />
           </div>

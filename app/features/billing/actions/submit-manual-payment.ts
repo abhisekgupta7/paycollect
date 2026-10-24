@@ -27,8 +27,8 @@ export async function submitManualPaymentAction(
       };
     }
 
-    // ✅ Fixed amount (never trust frontend) - Rs. 15,000 in paisa
-    const amount = 15 * 100 * 1000;
+    // ✅ Fixed amount (never trust frontend) - Rs. 7999 in paisa
+    const amount = 7999 * 100 * 1000;
 
     // ✅ Submit payment through service
     const payment = await submitManualPayment(
