@@ -8,6 +8,7 @@ import {
 } from "../services/payment.services";
 import { createNotification } from "@/app/features/notification/services/notification.service";
 import { markNotificationAsRead } from "@/app/features/notification/services/notification.service";
+import { verifyOrgPaymentAndEnqueueReceipt } from "../whatsapp/outbox.service";
 
 export async function approvePaymentAction(
   paymentId: string,
@@ -52,8 +53,20 @@ export async function approvePaymentAction(
       };
     }
 
-    await updatePaymentStatus(paymentId, "VERIFIED");
-    await activateSubscriptionAfterPayment(payment.organizationId!);
+    if (payment.context === "PLATFORM") {
+      await updatePaymentStatus(paymentId, "VERIFIED");
+      await activateSubscriptionAfterPayment(payment.organizationId!);
+    } else {
+      try {
+        await verifyOrgPaymentAndEnqueueReceipt(paymentId);
+      } catch (error) {
+        console.error("Failed to enqueue WhatsApp payment receipt:", error);
+        return {
+          success: false,
+          message: "Payment verification failed. Please try again.",
+        };
+      }
+    }
 
     if (notificationId) {
       try {

@@ -255,6 +255,7 @@ export async function updatePaymentStatus(
           .update(paymentsTable)
           .set({
             status,
+            verifiedAt: status === "VERIFIED" ? new Date() : null,
             updatedAt: new Date(),
           })
           .where(eq(paymentsTable.id, paymentId))

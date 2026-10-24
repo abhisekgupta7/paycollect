@@ -189,6 +189,63 @@ export const customerTable = pgTable(
   }),
 );
 
+export const whatsappDeliveryStatusEnum = pgEnum("whatsapp_delivery_status", [
+  "PENDING",
+  "PROCESSING",
+  "RETRY",
+  "SENT",
+  "FAILED",
+  "CANCELLED",
+]);
+
+export const whatsappRecipientTypeEnum = pgEnum("whatsapp_recipient_type", [
+  "RETAILER",
+  "WHOLESALER_OWNER",
+]);
+
+export const whatsappOutboxTable = pgTable(
+  "whatsapp_outbox",
+  {
+    id: uuid()
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    paymentId: uuid()
+      .notNull()
+      .references(() => paymentsTable.id, { onDelete: "cascade" }),
+    organizationId: uuid()
+      .notNull()
+      .references(() => organizationsTable.id, { onDelete: "cascade" }),
+    customerId: uuid().references(() => customerTable.id, {
+      onDelete: "set null",
+    }),
+    recipientType: whatsappRecipientTypeEnum().notNull(),
+    recipientPhone: varchar({ length: 20 }).notNull(),
+    messageType: varchar({ length: 100 }).notNull(),
+    payload: jsonb().notNull(),
+    status: whatsappDeliveryStatusEnum().notNull().default("PENDING"),
+    attempts: integer().notNull().default(0),
+    availableAt: timestamp().defaultNow().notNull(),
+    lockedAt: timestamp(),
+    lockedBy: varchar({ length: 100 }),
+    sentAt: timestamp(),
+    lastError: varchar({ length: 500 }),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp().defaultNow().notNull(),
+  },
+  (table) => ({
+    whatsappPaymentRecipientMessageUnique: unique(
+      "whatsapp_payment_recipient_message_unique",
+    ).on(table.paymentId, table.recipientType, table.messageType),
+    whatsappQueueIdx: index("whatsapp_queue_idx").on(
+      table.status,
+      table.availableAt,
+    ),
+    whatsappOrganizationIdx: index("whatsapp_organization_idx").on(
+      table.organizationId,
+    ),
+  }),
+);
+
 export const ledgerEntriesTable = pgTable(
   "ledger_entries",
   {
