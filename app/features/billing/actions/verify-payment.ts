@@ -1,46 +1,41 @@
 "use server";
 
-import { auth } from "@/auth";
 import {
   activateSubscriptionAfterPayment,
   getPayment,
   updatePaymentStatus,
 } from "../services/payment.services";
 import { createNotification } from "@/app/features/notification/services/notification.service";
+import { cookies } from "next/headers";
+import { findAdminById } from "@/app/features/admin/services/admin-auth.service";
+import { verifyAdminToken } from "@/app/features/admin/utils/jwt";
 
 export async function verifyPaymentAction(
   paymentId: string,
   action: "approve" | "reject",
 ) {
   try {
-    const session = await auth();
     const payment = await getPayment(paymentId);
+    const cookieStore = await cookies();
+    const adminToken = cookieStore.get("admin_token")?.value;
+    const adminVerification = adminToken
+      ? verifyAdminToken(adminToken)
+      : { valid: false as const };
+    const admin = adminVerification.valid && adminVerification.payload?.id
+      ? await findAdminById(adminVerification.payload.id)
+      : null;
 
-    if (!session?.user?.id || !payment) {
+    if (!admin || !admin.isActive || !payment) {
       return {
         success: false,
         message: "Unauthorized",
       };
     }
 
-    const role = session.user.role;
-    const activeOrgId = session.user.activeOrgId;
-
-    if (role !== "OWNER" && role !== "ADMIN") {
+    if (payment.context !== "PLATFORM" || !payment.organizationId) {
       return {
         success: false,
-        message: "Only admins can verify payments",
-      };
-    }
-
-    if (
-      role === "OWNER" &&
-      activeOrgId &&
-      payment.organizationId !== activeOrgId
-    ) {
-      return {
-        success: false,
-        message: "Payment not found for this organization",
+        message: "Only platform subscription payments can be verified here",
       };
     }
 

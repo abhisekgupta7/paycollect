@@ -78,14 +78,30 @@ export async function submitSubscriptionPaymentAction(proofUrl: string) {
       throw new Error("Failed to create payment record");
     }
 
-    // ✅ Update subscription status to reflect pending payment (if subscription exists)
-    await db
-      .update(subscriptionsTable)
-      .set({
-        status: "PAST_DUE", // Mark as past due until payment is verified
+    // Existing organizations may predate subscription provisioning.
+    const subscription = await db
+      .select({ id: subscriptionsTable.id })
+      .from(subscriptionsTable)
+      .where(eq(subscriptionsTable.organizationId, context.orgId))
+      .limit(1);
+
+    if (subscription[0]) {
+      await db
+        .update(subscriptionsTable)
+        .set({
+          status: "PAST_DUE",
+          updatedAt: new Date(),
+        })
+        .where(eq(subscriptionsTable.organizationId, context.orgId));
+    } else {
+      await db.insert(subscriptionsTable).values({
+        organizationId: context.orgId,
+        plan: "FREE",
+        status: "PAST_DUE",
+        createdAt: new Date(),
         updatedAt: new Date(),
-      })
-      .where(eq(subscriptionsTable.organizationId, context.orgId));
+      });
+    }
 
     // ✅ Create notification for organization owner
     await createNotification(

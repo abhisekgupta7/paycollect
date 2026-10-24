@@ -8,6 +8,7 @@ import DashboardSignOutButton from "@/components/Utility/DashboardSignOutButton"
 import NotificationBell from "@/app/features/notification/components/notification-bell";
 import { getDashboardNotifications } from "@/app/features/notification/actions/get-dashboard-notifications";
 import PwaManager from "@/components/Utility/PwaManager";
+import { isSubscriptionActive } from "@/app/features/billing/services/payment.services";
 
 const navItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutGrid },
@@ -26,6 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const membership = await verifyMembership(session.user.id, orgId);
   const organization = await getOrganizationById(orgId);
   if (!membership || !organization) redirect("/");
+  if (!(await isSubscriptionActive(orgId))) redirect("/subscriptionPage");
   const notifications = await getDashboardNotifications();
 
   return (

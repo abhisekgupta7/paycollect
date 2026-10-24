@@ -73,7 +73,7 @@ export default function SubscriptionPage() {
             </div>
             <div className="flex items-center justify-between gap-4 text-slate-400">
               <span>Amount due</span>
-              <span className="text-lg font-semibold text-white">Rs. 7999</span>
+              <span className="text-lg font-semibold text-white">Rs. 15,000</span>
             </div>
           </div>
         </div>

@@ -1,7 +1,11 @@
 "use server";
 
 import { db } from "@/lib/db/client";
-import { membershipsTable, organizationsTable } from "@/lib/db/schema";
+import {
+  membershipsTable,
+  organizationsTable,
+  subscriptionsTable,
+} from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export type MembershipRole = "OWNER" | "ADMIN" | "MEMBER";
@@ -47,7 +51,18 @@ export async function createOrganizationWithMembership(
         })
         .returning();
 
-      return { organization, membership };
+      const [subscription] = await tx
+        .insert(subscriptionsTable)
+        .values({
+          organizationId: organization.id,
+          plan: "FREE",
+          status: "INACTIVE",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      return { organization, membership, subscription };
     });
   } catch (error) {
     console.error("Failed to create organization with membership:", error);

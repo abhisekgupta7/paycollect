@@ -30,7 +30,7 @@ export default function Navbar() {
             How it works
           </Link>
           <Link
-            href="#pricing"
+            href="/#pricing"
             className="rounded-md px-3 py-2 text-sm font-medium text-[#667085] transition-colors hover:bg-[#eef2fa] hover:text-[#243b64]"
           >
             For wholesalers

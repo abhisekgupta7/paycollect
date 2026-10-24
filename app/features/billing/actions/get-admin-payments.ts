@@ -1,6 +1,6 @@
 "use server";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { organizationsTable, paymentsTable } from "@/lib/db/schema";
 
@@ -29,7 +29,10 @@ export async function getAdminPayments(
     const whereCondition =
       status === "ALL"
         ? eq(paymentsTable.context, "PLATFORM")
-        : eq(paymentsTable.status, status);
+        : and(
+            eq(paymentsTable.context, "PLATFORM"),
+            eq(paymentsTable.status, status),
+          );
 
     const rows: AdminPaymentRow[] = await db
       .select({

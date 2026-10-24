@@ -46,7 +46,7 @@ export default function SignupForm() {
   async function handleGoogleSignup() {
     try {
       setIsGoogleLoading(true);
-      await signIn("google", { callbackUrl: "/dashboard" });
+      await signIn("google", { callbackUrl: "/subscriptionPage" });
     } catch (error) {
       toast.error("Google signup failed");
       console.error("Google signup error:", error);

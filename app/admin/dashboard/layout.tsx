@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 const navItems = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutGrid },
   { label: "Payments", href: "/admin/dashboard/payments", icon: Wallet },
-  { label: "Settings", href: "/admin/dashboard/settings", icon: Settings },
+  { label: "Settings", href: "/admin/dashboard/setting", icon: Settings },
 ];
 
 export default async function DashboardLayout({

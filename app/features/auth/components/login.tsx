@@ -38,7 +38,7 @@ export default function LoginForm() {
       }
 
       toast.success("Logged in successfully!");
-      router.replace("/dashboard");
+      router.replace("/subscriptionPage");
       router.refresh();
     } catch (error) {
       toast.error("Login failed. Please try again.");
@@ -49,7 +49,7 @@ export default function LoginForm() {
   async function handleGoogleLogin() {
     try {
       setIsGoogleLoading(true);
-      await signIn("google", { callbackUrl: "/dashboard" });
+      await signIn("google", { callbackUrl: "/subscriptionPage" });
     } catch (error) {
       toast.error("Google login failed");
       console.error("Google login error:", error);

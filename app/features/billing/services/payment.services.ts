@@ -94,7 +94,19 @@ export async function isSubscriptionActive(organizationId: string) {
     )
       return false;
 
-    return true;
+    const verifiedPlatformPayment = await db
+      .select({ id: paymentsTable.id })
+      .from(paymentsTable)
+      .where(
+        and(
+          eq(paymentsTable.organizationId, organizationId),
+          eq(paymentsTable.context, "PLATFORM"),
+          eq(paymentsTable.status, "VERIFIED"),
+        ),
+      )
+      .limit(1);
+
+    return verifiedPlatformPayment.length > 0;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to check subscription";
