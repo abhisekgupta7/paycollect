@@ -15,7 +15,6 @@ export default function Navbar() {
     pathname.startsWith("/pay/")
   )
     return null;
-  return null;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-[#e4e7ec] bg-white/90 backdrop-blur">
@@ -70,11 +69,7 @@ export default function Navbar() {
         ) : (
           <div className="flex items-center gap-3">
             <PwaManager installOnly />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="hidden border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 sm:inline-flex h-10"
-            >
+            <Button variant="ghost" size="sm">
               <Link href="/auth/login">Sign in</Link>
             </Button>
             <Button

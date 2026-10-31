@@ -38,6 +38,12 @@ NEXT_PUBLIC_APP_URL=https://your-domain.example
 ```
 
 Owners and admins can then use **Enable alerts** in the dashboard header.
+Subscriptions are stored with both the user ID and active organization ID.
+Push delivery filters by organization, so a notification created for one
+tenant is not sent to subscriptions belonging to another tenant.
+
+For Vercel, add the same VAPID values to the project environment variables for
+the Production deployment. Do not commit the private key.
 
 ## Retailer payment links
 

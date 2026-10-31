@@ -3,6 +3,7 @@ import { pushSubscriptionsTable } from "@/lib/db/schema";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { and, eq } from "drizzle-orm";
 import { getServerSession } from "next-auth";
+import { verifyMembership } from "@/app/features/auth/services/membership.service";
 
 type PushSubscriptionPayload = {
   endpoint: string;
@@ -20,6 +21,17 @@ export async function POST(request: Request) {
     return new Response(
       JSON.stringify({ success: false, error: "Unauthorized" }),
       { status: 401 },
+    );
+  }
+
+  const membership = await verifyMembership(
+    session.user.id,
+    session.user.activeOrgId,
+  );
+  if (!membership) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Organization access denied" }),
+      { status: 403 },
     );
   }
 
@@ -72,6 +84,17 @@ export async function DELETE(request: Request) {
     return new Response(
       JSON.stringify({ success: false, error: "Unauthorized" }),
       { status: 401 },
+    );
+  }
+
+  const membership = await verifyMembership(
+    session.user.id,
+    session.user.activeOrgId,
+  );
+  if (!membership) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Organization access denied" }),
+      { status: 403 },
     );
   }
 
