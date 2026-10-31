@@ -15,6 +15,27 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in a browser.
 
+## Deployment architecture
+
+The Next.js application is both the frontend and backend: pages, server
+actions, API routes, authentication, and database access deploy together on
+Vercel. The WhatsApp receipt worker is the only separate service because it
+must run continuously and poll the PostgreSQL outbox.
+
+Recommended production layout:
+
+- **Vercel:** Next.js application and API routes.
+- **PostgreSQL:** shared application database and WhatsApp outbox.
+- **Background worker:** build with `Dockerfile.worker` and run on Railway,
+  Render, Fly.io, or a VPS.
+- **WhatsApp provider:** a publicly reachable provider configured through
+  `WHATSAPP_SEND_URL`.
+
+The worker does not run on the user's phone and should not run as a Vercel
+function. It only needs the same `DATABASE_URL` and WhatsApp environment
+variables as the application. Redis is optional; the worker's polling loop
+still recovers events when Redis is unavailable.
+
 ## PWA and push notifications
 
 PayCollect includes an installable PWA manifest, a service worker for the app
