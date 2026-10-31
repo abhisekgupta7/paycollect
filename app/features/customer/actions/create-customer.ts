@@ -67,6 +67,7 @@ export async function createCustomer(input: CreateCustomerInput) {
       success: true,
       message: "Customer created successfully",
       data: result[0],
+      organizationId,
     };
   } catch (error) {
     console.error("Create customer error:", error);

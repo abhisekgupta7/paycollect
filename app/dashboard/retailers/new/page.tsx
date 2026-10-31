@@ -27,6 +27,23 @@ export default function NewRetailerPage() {
     }
 
     toast.success(result.message);
+    if (result.organizationId && result.data?.phone) {
+      const phone = result.data.phone.replace(/\D/g, "").slice(-10);
+      const paymentLink = `${window.location.origin}/pay/${result.organizationId}`;
+      const message = [
+        `Hello ${result.data.name},`,
+        "Your wholesaler has invited you to PayCollect.",
+        "",
+        `Pay and submit proof here: ${paymentLink}`,
+        "",
+        "Open the link and use your browser menu to install the PayCollect app.",
+        "Use your registered phone number to view payment status and download receipts.",
+      ].join("\n");
+      window.location.assign(
+        `https://wa.me/977${phone}?text=${encodeURIComponent(message)}`,
+      );
+      return;
+    }
     router.push("/dashboard/retailers");
     router.refresh();
   }
@@ -75,7 +92,7 @@ export default function NewRetailerPage() {
             disabled={isSubmitting}
             className="rounded-lg bg-[#243b64] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? "Saving..." : "Save retailer"}
+            {isSubmitting ? "Saving..." : "Save & send WhatsApp invite"}
           </button>
         </div>
       </form>

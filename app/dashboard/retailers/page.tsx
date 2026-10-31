@@ -40,8 +40,13 @@ export default async function RetailersPage() {
       {organizationId && (
         <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#dbe4f2] bg-[#eef4ff] p-4">
           <div>
-            <p className="text-sm font-semibold text-[#243b64]">Share your payment page</p>
-            <p className="mt-1 text-xs text-[#667085]">Send this secure tenant link to retailers. They verify their registered phone before submitting proof.</p>
+            <p className="text-sm font-semibold text-[#243b64]">
+              Share your payment page
+            </p>
+            <p className="mt-1 text-xs text-[#667085]">
+              Send this secure tenant link to retailers. They verify their
+              registered phone before submitting proof.
+            </p>
           </div>
           <SharePaymentLink organizationId={organizationId} />
         </section>
@@ -83,7 +88,13 @@ export default async function RetailersPage() {
                   </p>
                   <p className="text-xs text-[#b7791f]">Outstanding</p>
                 </div>
-                {organizationId && <SharePaymentLink organizationId={organizationId} retailerName={retailer.name} />}
+                {organizationId && (
+                  <SharePaymentLink
+                    organizationId={organizationId}
+                    retailerName={retailer.name}
+                    retailerPhone={retailer.phone}
+                  />
+                )}
               </div>
             ))}
           </div>

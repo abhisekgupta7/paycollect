@@ -34,7 +34,11 @@ function getPushSupport() {
   return "serviceWorker" in navigator && "PushManager" in window;
 }
 
-export default function PwaManager() {
+export default function PwaManager({
+  installOnly = false,
+}: {
+  installOnly?: boolean;
+}) {
   const [installEvent, setInstallEvent] = useState<Event | null>(null);
   const [installAccepted, setInstallAccepted] = useState(false);
   const isStandalone = useSyncExternalStore(
@@ -59,20 +63,27 @@ export default function PwaManager() {
     window.addEventListener("beforeinstallprompt", handleInstall);
 
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js", {
-        scope: "/",
-        updateViaCache: "none",
-      }).catch((error) => console.error("PWA service worker registration failed:", error));
+      navigator.serviceWorker
+        .register("/sw.js", {
+          scope: "/",
+          updateViaCache: "none",
+        })
+        .catch((error) =>
+          console.error("PWA service worker registration failed:", error),
+        );
     }
 
     if (getPushSupport()) {
       navigator.serviceWorker.ready
         .then((registration) => registration.pushManager.getSubscription())
         .then((subscription) => setIsSubscribed(Boolean(subscription)))
-        .catch((error) => console.error("Push subscription lookup failed:", error));
+        .catch((error) =>
+          console.error("Push subscription lookup failed:", error),
+        );
     }
 
-    return () => window.removeEventListener("beforeinstallprompt", handleInstall);
+    return () =>
+      window.removeEventListener("beforeinstallprompt", handleInstall);
   }, []);
 
   async function installApp() {
@@ -135,18 +146,45 @@ export default function PwaManager() {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {!isInstalled && installEvent && (
-        <button type="button" onClick={installApp} className="inline-flex items-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-3 py-2 text-xs font-medium text-[#243b64] hover:bg-[#f7f8fa]">
+        <button
+          type="button"
+          onClick={installApp}
+          className="inline-flex items-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-3 py-2 text-xs font-medium text-[#243b64] hover:bg-[#f7f8fa]"
+        >
           <Download className="h-3.5 w-3.5" /> Install app
         </button>
       )}
-      {pushSupported && (
-        <button type="button" disabled={isBusy} onClick={togglePush} className="inline-flex items-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-3 py-2 text-xs font-medium text-[#243b64] hover:bg-[#f7f8fa] disabled:opacity-50">
-          {isSubscribed ? <BellOff className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
+      {installOnly && !isInstalled && !installEvent && (
+        <button
+          type="button"
+          onClick={() =>
+            toast.info("Use your browser menu to install PayCollect")
+          }
+          className="inline-flex items-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-3 py-2 text-xs font-medium text-[#243b64] hover:bg-[#f7f8fa]"
+        >
+          <Download className="h-3.5 w-3.5" /> Install app
+        </button>
+      )}
+      {!installOnly && pushSupported && (
+        <button
+          type="button"
+          disabled={isBusy}
+          onClick={togglePush}
+          className="inline-flex items-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-3 py-2 text-xs font-medium text-[#243b64] hover:bg-[#f7f8fa] disabled:opacity-50"
+        >
+          {isSubscribed ? (
+            <BellOff className="h-3.5 w-3.5" />
+          ) : (
+            <Bell className="h-3.5 w-3.5" />
+          )}
           {isSubscribed ? "Disable alerts" : "Enable alerts"}
         </button>
       )}
-      {!pushSupported && !isInstalled && (
-        <span className="inline-flex items-center gap-2 text-xs text-[#98a2b3]"><Smartphone className="h-3.5 w-3.5" /> Add to home screen from your browser menu</span>
+      {!installOnly && !pushSupported && !isInstalled && (
+        <span className="inline-flex items-center gap-2 text-xs text-[#98a2b3]">
+          <Smartphone className="h-3.5 w-3.5" /> Add to home screen from your
+          browser menu
+        </span>
       )}
     </div>
   );

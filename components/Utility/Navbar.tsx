@@ -4,11 +4,13 @@ import Link from "next/link";
 import { Button } from "../ui/button";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import PwaManager from "./PwaManager";
 
 export default function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) return null;
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin"))
+    return null;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-[#e4e7ec] bg-white/90 backdrop-blur">
@@ -45,6 +47,7 @@ export default function Navbar() {
 
         {session ? (
           <div className="flex items-center gap-3">
+            <PwaManager installOnly />
             <Button
               variant="ghost"
               size="sm"
@@ -61,6 +64,7 @@ export default function Navbar() {
           </div>
         ) : (
           <div className="flex items-center gap-3">
+            <PwaManager installOnly />
             <Button
               variant="ghost"
               size="sm"

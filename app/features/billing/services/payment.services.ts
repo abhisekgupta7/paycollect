@@ -122,7 +122,11 @@ export async function isSubscriptionActive(organizationId: string) {
 /**
  * Check if organization has existing pending payment
  */
-export async function getPendingPayment(organizationId: string) {
+export async function getPendingPayment(
+  organizationId: string,
+  context: "PLATFORM" | "ORG",
+  customerId?: string,
+) {
   try {
     const existing = await db
       .select()
@@ -130,7 +134,9 @@ export async function getPendingPayment(organizationId: string) {
       .where(
         and(
           eq(paymentsTable.organizationId, organizationId),
+          eq(paymentsTable.context, context),
           eq(paymentsTable.status, "PENDING"),
+          ...(customerId ? [eq(paymentsTable.customerId, customerId)] : []),
         ),
       )
       .limit(1);
@@ -164,7 +170,12 @@ export async function submitManualPayment(
     }
 
     // Check for existing pending payment
-    const existingPayment = await getPendingPayment(organizationId);
+    const paymentContext = customerId ? "ORG" : "PLATFORM";
+    const existingPayment = await getPendingPayment(
+      organizationId,
+      paymentContext,
+      customerId,
+    );
     if (existingPayment) {
       throw new Error(
         "You already have a pending payment. Please wait for verification.",
@@ -178,7 +189,7 @@ export async function submitManualPayment(
         organizationId,
         userId,
         customerId: customerId ?? null,
-        context: "ORG",
+        context: paymentContext,
         provider: "MANUAL",
         amount,
         currency,

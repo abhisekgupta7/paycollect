@@ -9,12 +9,16 @@ import {
   UploadCloud,
   XCircle,
   ArrowLeft,
+  Download,
+  History,
+  ReceiptText,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
 import { getOrganizationConfigPublic } from "@/app/features/OrgConfig/actions/get-config-public";
 import { getCustomerByPhonePublic } from "@/app/features/customer/actions/get-customer-by-phone-public";
+import { getCustomerPaymentHistoryPublic } from "@/app/features/billing/actions/get-customer-payment-history-public";
 import { submitPaymentPublic } from "@/app/features/billing/actions/submit-payment-public";
 import ImageUploader from "@/components/Utility/ImageUploader";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +42,18 @@ type VerifiedCustomer = {
   phone: string | null;
 };
 
+type CustomerPayment = {
+  id: string;
+  amount: number;
+  currency: string;
+  status: "PENDING" | "VERIFIED" | "REJECTED";
+  reference: string;
+  createdAt: Date;
+  verifiedAt: Date | null;
+  customerName: string;
+  organizationName: string;
+};
+
 export default function PublicPaymentPage() {
   const params = useParams();
   const organizationId = params?.organizationId as string;
@@ -56,12 +72,99 @@ export default function PublicPaymentPage() {
     useState<VerifiedCustomer | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [successPaymentId, setSuccessPaymentId] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<"pay" | "history">("pay");
+  const [historyPhone, setHistoryPhone] = useState("");
+  const [historyCustomer, setHistoryCustomer] =
+    useState<VerifiedCustomer | null>(null);
+  const [paymentHistory, setPaymentHistory] = useState<CustomerPayment[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   const normalizePhone = (value: string) => value.replace(/\D/g, "").slice(-10);
   const parseAmountToPaisa = (value: string) => {
     const numericAmount = Number.parseFloat(value);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) return null;
     return Math.round(numericAmount * 100);
+  };
+
+  const lookupCustomer = async (value: string) => {
+    const normalizedPhone = normalizePhone(value);
+    if (normalizedPhone.length !== 10) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return null;
+    }
+
+    setIsLookingUp(true);
+    try {
+      const result = await getCustomerByPhonePublic(
+        organizationId,
+        normalizedPhone,
+      );
+
+      if (!result.success || !result.customer) {
+        toast.error(
+          result.message || "No retailer account found for this wholesaler.",
+        );
+        return null;
+      }
+
+      return result.customer;
+    } catch {
+      toast.error("Error verifying phone number");
+      return null;
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
+  const loadPaymentHistory = async (
+    customer: VerifiedCustomer,
+    customerPhone: string,
+  ) => {
+    setIsLoadingHistory(true);
+    try {
+      const result = await getCustomerPaymentHistoryPublic(
+        organizationId,
+        customer.id,
+        normalizePhone(customerPhone),
+      );
+
+      if (!result.success) {
+        toast.error(result.message || "Unable to load payment history");
+        return;
+      }
+
+      setHistoryCustomer(customer);
+      setPaymentHistory(result.payments as CustomerPayment[]);
+      setActiveView("history");
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const downloadReceipt = (payment: CustomerPayment) => {
+    const content = [
+      "PayCollect Payment Receipt",
+      "==========================",
+      `Wholesaler: ${payment.organizationName}`,
+      `Retailer: ${payment.customerName}`,
+      `Amount: ${payment.currency} ${(payment.amount / 100).toFixed(2)}`,
+      `Status: ${payment.status}`,
+      `Reference: ${payment.reference}`,
+      `Submitted: ${new Date(payment.createdAt).toLocaleString()}`,
+      payment.verifiedAt
+        ? `Verified: ${new Date(payment.verifiedAt).toLocaleString()}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    const url = URL.createObjectURL(
+      new Blob([content], { type: "text/plain" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `paycollect-receipt-${payment.reference}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   // Load organization config on mount
@@ -116,28 +219,17 @@ export default function PublicPaymentPage() {
       return;
     }
 
-    setIsLookingUp(true);
-    try {
-      const result = await getCustomerByPhonePublic(
-        organizationId,
-        normalizedPhone,
-      );
-
-      if (!result.success || !result.customer) {
-        toast.error(
-          result.message ||
-            "Please enter your correct number for payment verification.",
-        );
-        setIsLookingUp(false);
-        return;
-      }
-
-      setVerifiedCustomer(result.customer);
+    const customer = await lookupCustomer(normalizedPhone);
+    if (customer) {
+      setVerifiedCustomer(customer);
       setIsDialogOpen(true);
-    } catch {
-      toast.error("Error verifying phone number");
-    } finally {
-      setIsLookingUp(false);
+    }
+  };
+
+  const handleOpenHistory = async () => {
+    const customer = await lookupCustomer(historyPhone);
+    if (customer) {
+      await loadPaymentHistory(customer, historyPhone);
     }
   };
 
@@ -238,9 +330,32 @@ export default function PublicPaymentPage() {
               Reference: {successPaymentId}
             </p>
           )}
-          <p className="text-xs text-green-600">
-            Redirecting to payment details...
-          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                setHistoryPhone(phoneNumber);
+                setSubmitSuccess(false);
+                setActiveView("history");
+                void loadPaymentHistory(verifiedCustomer!, phoneNumber);
+              }}
+            >
+              <History className="mr-2 h-4 w-4" />
+              View my payments
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                setSubmitSuccess(false);
+                setSuccessPaymentId(null);
+                setProofUrl("");
+                setAmount("");
+              }}
+            >
+              Make another payment
+            </Button>
+          </div>
         </Card>
       </div>
     );
@@ -262,10 +377,123 @@ export default function PublicPaymentPage() {
           <p className="text-slate-600 mt-2">
             Submit your payment proof for verification
           </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button
+              variant={activeView === "pay" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView("pay")}
+            >
+              <QrCode className="mr-2 h-4 w-4" />
+              Pay wholesaler
+            </Button>
+            <Button
+              variant={activeView === "history" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView("history")}
+            >
+              <History className="mr-2 h-4 w-4" />
+              My payment dashboard
+            </Button>
+          </div>
         </div>
 
+        {activeView === "history" && (
+          <Card className="mb-8 border-0 p-6 shadow-lg">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
+                  <ReceiptText className="h-5 w-5 text-blue-600" />
+                  Retailer payment dashboard
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Enter the phone number registered with this wholesaler to view
+                  your payments.
+                </p>
+              </div>
+              {historyCustomer && (
+                <Badge className="w-fit bg-blue-100 text-blue-800">
+                  {historyCustomer.name}
+                </Badge>
+              )}
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <Input
+                type="tel"
+                value={historyPhone}
+                onChange={(event) => setHistoryPhone(event.target.value)}
+                placeholder="Your registered phone number"
+                className="sm:max-w-sm"
+              />
+              <Button
+                onClick={handleOpenHistory}
+                disabled={isLookingUp || isLoadingHistory}
+              >
+                {isLookingUp || isLoadingHistory
+                  ? "Loading..."
+                  : "View payments"}
+              </Button>
+            </div>
+
+            {historyCustomer && !isLoadingHistory && (
+              <div className="mt-6 space-y-3">
+                {paymentHistory.length === 0 ? (
+                  <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
+                    No payments have been submitted for this account yet.
+                  </p>
+                ) : (
+                  paymentHistory.map((payment) => (
+                    <div
+                      key={payment.id}
+                      className="flex flex-col gap-3 rounded-lg border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <p className="font-semibold text-slate-900">
+                          {payment.currency}{" "}
+                          {(payment.amount / 100).toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {payment.reference} ·{" "}
+                          {new Date(payment.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          className={
+                            payment.status === "VERIFIED"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : payment.status === "REJECTED"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-amber-100 text-amber-800"
+                          }
+                        >
+                          {payment.status}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => downloadReceipt(payment)}
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Receipt
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </Card>
+        )}
+
         {/* Main Content Grid */}
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div
+          className={
+            activeView === "history" ? "hidden" : "grid gap-8 lg:grid-cols-3"
+          }
+        >
           {/* Left: Instructions (Compact) */}
           <Card className="lg:col-span-2 overflow-hidden border-0 shadow-lg">
             <div className="bg-linear-to-br from-blue-500 to-blue-600 p-4 text-white">
