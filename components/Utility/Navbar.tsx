@@ -9,8 +9,13 @@ import PwaManager from "./PwaManager";
 export default function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin"))
+  if (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/pay/")
+  )
     return null;
+  return null;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-[#e4e7ec] bg-white/90 backdrop-blur">

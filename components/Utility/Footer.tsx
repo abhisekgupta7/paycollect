@@ -4,7 +4,12 @@ import { usePathname } from "next/navigation";
 
 export default function Footer() {
   const pathname = usePathname();
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) return null;
+  if (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/pay/")
+  )
+    return null;
   return (
     <footer className="border-t border-[#e4e7ec] bg-white">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-6 sm:flex-row">
@@ -16,7 +21,10 @@ export default function Footer() {
             <span className="text-sm font-semibold tracking-tight text-[#172033]">
               PayCollect
             </span>
-            <span className="text-xs text-slate-500">            Wholesaler receivables</span>
+            <span className="text-xs text-slate-500">
+              {" "}
+              Wholesaler receivables
+            </span>
           </div>
         </div>
 

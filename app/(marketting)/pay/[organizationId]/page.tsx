@@ -54,6 +54,37 @@ type CustomerPayment = {
   organizationName: string;
 };
 
+function RetailerMobileNav({
+  activeView,
+  onChange,
+}: {
+  activeView: "pay" | "history";
+  onChange: (view: "pay" | "history") => void;
+}) {
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:hidden">
+      <div className="mx-auto grid max-w-md grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => onChange("pay")}
+          className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-xs font-semibold ${activeView === "pay" ? "bg-blue-50 text-blue-700" : "text-slate-500"}`}
+        >
+          <QrCode className="h-5 w-5" />
+          Pay
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange("history")}
+          className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-xs font-semibold ${activeView === "history" ? "bg-blue-50 text-blue-700" : "text-slate-500"}`}
+        >
+          <History className="h-5 w-5" />
+          My payments
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 export default function PublicPaymentPage() {
   const params = useParams();
   const organizationId = params?.organizationId as string;
@@ -362,10 +393,10 @@ export default function PublicPaymentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 p-4">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 p-4 pb-24 sm:pb-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 rounded-2xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur sm:bg-transparent sm:p-0 sm:shadow-none">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
@@ -377,7 +408,7 @@ export default function PublicPaymentPage() {
           <p className="text-slate-600 mt-2">
             Submit your payment proof for verification
           </p>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-5 hidden flex-wrap gap-2 sm:flex">
             <Button
               variant={activeView === "pay" ? "default" : "outline"}
               size="sm"
@@ -712,6 +743,7 @@ export default function PublicPaymentPage() {
           )}
         </div>
       </div>
+      <RetailerMobileNav activeView={activeView} onChange={setActiveView} />
     </div>
   );
 }
