@@ -4,8 +4,10 @@ import { and, eq, lte, or } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   customerTable,
+  membershipsTable,
   organizationsTable,
   paymentsTable,
+  usersTable,
   whatsappOutboxTable,
 } from "@/lib/db/schema";
 import { getRedisClient } from "@/lib/redis";
@@ -26,7 +28,7 @@ async function wakeWorker(eventId: string | undefined) {
   }
 }
 
-async function insertReceiptEvent(
+async function insertReceiptEvents(
   executor: DbExecutor,
   paymentId: string,
 ) {
@@ -44,6 +46,7 @@ async function insertReceiptEvent(
       customerName: customerTable.name,
       customerPhone: customerTable.phone,
       organizationName: organizationsTable.name,
+      ownerPhone: usersTable.phone,
     })
     .from(paymentsTable)
     .leftJoin(customerTable, eq(paymentsTable.customerId, customerTable.id))
@@ -51,65 +54,102 @@ async function insertReceiptEvent(
       organizationsTable,
       eq(paymentsTable.organizationId, organizationsTable.id),
     )
+    .leftJoin(
+      membershipsTable,
+      and(
+        eq(membershipsTable.organizationId, organizationsTable.id),
+        eq(membershipsTable.role, "OWNER"),
+      ),
+    )
+    .leftJoin(usersTable, eq(membershipsTable.userId, usersTable.id))
     .where(eq(paymentsTable.id, paymentId))
     .limit(1);
 
   if (
     !payment ||
     payment.status !== "VERIFIED" ||
-    payment.context !== "ORG" ||
-    !payment.organizationId ||
-    !payment.customerId ||
-    !payment.customerPhone ||
-    !payment.customerName ||
     !payment.organizationName
   ) {
-    return { created: false, reason: "Payment has no eligible retailer recipient" };
+    return { created: false, eventIds: [], reason: "Payment has no eligible recipient" };
   }
 
   const reference =
     payment.referenceId || `PAY-${payment.id.slice(0, 8).toUpperCase()}`;
-  const payload = {
-    customerName: payment.customerName,
+  const commonPayload = {
+    customerName: payment.customerName || "Customer",
     organizationName: payment.organizationName,
     amount: payment.amount,
     currency: payment.currency,
     reference,
     paymentDate: (payment.verifiedAt || new Date()).toISOString(),
   };
+  const recipients =
+    payment.context === "PLATFORM"
+      ? [
+          payment.ownerPhone
+            ? {
+                recipientType: "WHOLESALER_OWNER" as const,
+                recipientPhone: payment.ownerPhone,
+              }
+            : null,
+          process.env.WHATSAPP_PLATFORM_ADMIN_PHONE
+            ? {
+                recipientType: "PLATFORM_ADMIN" as const,
+                recipientPhone: process.env.WHATSAPP_PLATFORM_ADMIN_PHONE,
+              }
+            : null,
+        ]
+      : [
+          payment.customerPhone
+            ? {
+                recipientType: "RETAILER" as const,
+                recipientPhone: payment.customerPhone,
+              }
+            : null,
+          payment.ownerPhone
+            ? {
+                recipientType: "WHOLESALER_OWNER" as const,
+                recipientPhone: payment.ownerPhone,
+              }
+            : null,
+        ];
+  const eventIds: string[] = [];
+  for (const recipient of recipients) {
+    if (!recipient || !payment.organizationId) continue;
+    const [event] = await executor
+      .insert(whatsappOutboxTable)
+      .values({
+        paymentId: payment.id,
+        organizationId: payment.organizationId,
+        customerId: payment.customerId,
+        recipientType: recipient.recipientType,
+        recipientPhone: recipient.recipientPhone,
+        messageType: MESSAGE_TYPE,
+        payload: { ...commonPayload, recipientType: recipient.recipientType },
+        status: "PENDING",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoNothing({
+        target: [
+          whatsappOutboxTable.paymentId,
+          whatsappOutboxTable.recipientType,
+          whatsappOutboxTable.messageType,
+        ],
+      })
+      .returning({ id: whatsappOutboxTable.id });
+    if (event) eventIds.push(event.id);
+  }
 
-  const [event] = await executor
-    .insert(whatsappOutboxTable)
-    .values({
-      paymentId: payment.id,
-      organizationId: payment.organizationId,
-      customerId: payment.customerId,
-      recipientType: "RETAILER",
-      recipientPhone: payment.customerPhone,
-      messageType: MESSAGE_TYPE,
-      payload,
-      status: "PENDING",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .onConflictDoNothing({
-      target: [
-        whatsappOutboxTable.paymentId,
-        whatsappOutboxTable.recipientType,
-        whatsappOutboxTable.messageType,
-      ],
-    })
-    .returning({ id: whatsappOutboxTable.id });
-
-  return { created: Boolean(event), eventId: event?.id };
+  return { created: eventIds.length > 0, eventIds };
 }
 
 export async function enqueueVerifiedPaymentReceipt(paymentId: string) {
-  const event = await insertReceiptEvent(db, paymentId);
+  const result = await insertReceiptEvents(db, paymentId);
 
-  await wakeWorker(event.eventId);
+  await Promise.all(result.eventIds.map((eventId) => wakeWorker(eventId)));
 
-  return event;
+  return result;
 }
 
 export async function verifyOrgPaymentAndEnqueueReceipt(paymentId: string) {
@@ -137,11 +177,39 @@ export async function verifyOrgPaymentAndEnqueueReceipt(paymentId: string) {
       })
       .where(eq(paymentsTable.id, paymentId));
 
-    return insertReceiptEvent(tx, paymentId);
+    return insertReceiptEvents(tx, paymentId);
   });
 
-  await wakeWorker(result.eventId);
+  await Promise.all(result.eventIds.map((eventId) => wakeWorker(eventId)));
 
+  return result;
+}
+
+export async function verifyPlatformPaymentAndEnqueueReceipts(paymentId: string) {
+  const result = await db.transaction(async (tx) => {
+    const [payment] = await tx
+      .select({
+        id: paymentsTable.id,
+        status: paymentsTable.status,
+        context: paymentsTable.context,
+      })
+      .from(paymentsTable)
+      .where(eq(paymentsTable.id, paymentId))
+      .limit(1);
+
+    if (!payment || payment.context !== "PLATFORM" || payment.status !== "PENDING") {
+      throw new Error("Payment is no longer pending platform payment");
+    }
+
+    await tx
+      .update(paymentsTable)
+      .set({ status: "VERIFIED", verifiedAt: new Date(), updatedAt: new Date() })
+      .where(eq(paymentsTable.id, paymentId));
+
+    return insertReceiptEvents(tx, paymentId);
+  });
+
+  await Promise.all(result.eventIds.map((eventId) => wakeWorker(eventId)));
   return result;
 }
 

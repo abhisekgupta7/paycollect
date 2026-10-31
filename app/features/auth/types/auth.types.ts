@@ -36,6 +36,7 @@ declare module "next-auth/jwt" {
 export const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
+  phone: z.string().regex(/^\+?[0-9\s()-]{10,20}$/, "Enter a valid WhatsApp number"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 

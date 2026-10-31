@@ -6,6 +6,7 @@ import { createOrganizationWithMembership } from "../services/membership.service
 export interface SignupInput {
   name: string;
   email: string;
+  phone: string;
   password: string;
 }
 
@@ -22,10 +23,10 @@ export interface SignupResult {
 export async function signup(input: SignupInput): Promise<SignupResult> {
   try {
     // Validate input
-    if (!input.email || !input.name || !input.password) {
+    if (!input.email || !input.name || !input.phone || !input.password) {
       return {
         success: false,
-        message: "Email, name, and password are required",
+        message: "Email, name, phone, and password are required",
       };
     }
 
@@ -33,6 +34,7 @@ export async function signup(input: SignupInput): Promise<SignupResult> {
     const user = await createUser({
       email: input.email,
       name: input.name,
+      phone: input.phone,
       password: input.password,
     });
 

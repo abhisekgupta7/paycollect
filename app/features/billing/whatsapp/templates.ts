@@ -1,4 +1,5 @@
 type PaymentReceiptPayload = {
+  recipientType: "RETAILER" | "WHOLESALER_OWNER" | "PLATFORM_ADMIN";
   customerName: string;
   organizationName: string;
   amount: number;
@@ -21,7 +22,7 @@ export function createPaymentReceiptMessage(payload: PaymentReceiptPayload) {
   return [
     "*PayCollect Payment Receipt*",
     "",
-    `Hello ${safeText(payload.customerName)},`,
+    `Hello ${payload.recipientType === "RETAILER" ? safeText(payload.customerName) : "PayCollect team"},`,
     "",
     "Your payment has been verified successfully.",
     "",
@@ -31,6 +32,8 @@ export function createPaymentReceiptMessage(payload: PaymentReceiptPayload) {
     `Date: ${safeText(payload.paymentDate)}`,
     "Status: Verified",
     "",
-    "Thank you.",
+    payload.recipientType === "RETAILER"
+      ? "Thank you."
+      : "Please keep this receipt for your records.",
   ].join("\n");
 }

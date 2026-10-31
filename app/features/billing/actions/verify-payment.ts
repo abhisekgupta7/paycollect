@@ -9,6 +9,7 @@ import { createNotification } from "@/app/features/notification/services/notific
 import { cookies } from "next/headers";
 import { findAdminById } from "@/app/features/admin/services/admin-auth.service";
 import { verifyAdminToken } from "@/app/features/admin/utils/jwt";
+import { verifyPlatformPaymentAndEnqueueReceipts } from "../whatsapp/outbox.service";
 
 export async function verifyPaymentAction(
   paymentId: string,
@@ -46,8 +47,11 @@ export async function verifyPaymentAction(
       };
     }
 
-    const newStatus = action === "approve" ? "VERIFIED" : "REJECTED";
-    await updatePaymentStatus(paymentId, newStatus as "VERIFIED" | "REJECTED");
+    if (action === "approve") {
+      await verifyPlatformPaymentAndEnqueueReceipts(paymentId);
+    } else {
+      await updatePaymentStatus(paymentId, "REJECTED");
+    }
 
     // Create notification
     const notificationType =

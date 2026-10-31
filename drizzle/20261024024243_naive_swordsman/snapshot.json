@@ -1,0 +1,72 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "51dbeb05-1fc8-4ffb-b361-80446a88920d",
+  "prevIds": [
+    "ec5bdaae-bc29-4a45-b89d-86d21d72ea7e"
+  ],
+  "footprints": [
+    {
+      "statementType": "alter_enum",
+      "statementTarget": [
+        "enum",
+        "public",
+        "whatsapp_recipient_type"
+      ],
+      "writes": [
+        "s|enum|public.whatsapp_recipient_type"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "add_column",
+      "statementTarget": [
+        "column",
+        "public",
+        "users",
+        "phone"
+      ],
+      "writes": [
+        "s|col|public.users.phone",
+        "n|col|public.users.phone",
+        "e|col|public.users.phone"
+      ],
+      "reads": [
+        "n|tbl|public.users",
+        "n|sch|public"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "users",
+        "name": "phone",
+        "type": "varchar(20)",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "alter",
+      "key": "enums\u0000[\"public\",\"whatsapp_recipient_type\"]",
+      "set": {
+        "values": [
+          "RETAILER",
+          "WHOLESALER_OWNER",
+          "PLATFORM_ADMIN"
+        ]
+      }
+    }
+  ]
+}

@@ -30,6 +30,7 @@ async function processBatch() {
         currency: string;
         reference: string;
         paymentDate: string;
+        recipientType: "RETAILER" | "WHOLESALER_OWNER" | "PLATFORM_ADMIN";
       };
       await sendWhatsAppText({
         phone: event.recipientPhone,

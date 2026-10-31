@@ -22,6 +22,7 @@ export default function SignupForm() {
     defaultValues: {
       name: "",
       email: "",
+      phone: "",
       password: "",
     },
   });
@@ -92,6 +93,25 @@ export default function SignupForm() {
           {form.formState.errors.email && (
             <p className="text-xs text-red-400">
               {form.formState.errors.email.message}
+            </p>
+          )}
+        </div>
+
+        {/* Password Field */}
+        <div className="space-y-2">
+          <Label htmlFor="phone" className="text-sm font-medium text-slate-200">
+            WhatsApp Number
+          </Label>
+          <Input
+            id="phone"
+            type="tel"
+            placeholder="+977 9812345678"
+            className="h-10 border-white/10 bg-white/5 text-slate-100 placeholder-slate-500 focus:border-emerald-400 focus:ring-emerald-400"
+            {...form.register("phone")}
+          />
+          {form.formState.errors.phone && (
+            <p className="text-xs text-red-400">
+              {form.formState.errors.phone.message}
             </p>
           )}
         </div>

@@ -20,6 +20,7 @@ export const usersTable = pgTable("users", {
   email: varchar({ length: 255 }).notNull().unique(),
   passwordHash: varchar({ length: 255 }),
   image: varchar({ length: 255 }),
+  phone: varchar({ length: 20 }),
   createdAt: timestamp().defaultNow().notNull(),
   updatedAt: timestamp().defaultNow().notNull(),
 });
@@ -201,6 +202,7 @@ export const whatsappDeliveryStatusEnum = pgEnum("whatsapp_delivery_status", [
 export const whatsappRecipientTypeEnum = pgEnum("whatsapp_recipient_type", [
   "RETAILER",
   "WHOLESALER_OWNER",
+  "PLATFORM_ADMIN",
 ]);
 
 export const whatsappOutboxTable = pgTable(

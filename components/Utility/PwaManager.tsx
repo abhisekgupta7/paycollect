@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, Smartphone, Bell, BellOff } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
 function toUint8Array(value: string) {
@@ -11,22 +11,43 @@ function toUint8Array(value: string) {
   return Uint8Array.from(raw, (character) => character.charCodeAt(0));
 }
 
+function subscribeToDisplayMode(callback: () => void) {
+  const mediaQuery = window.matchMedia("(display-mode: standalone)");
+  mediaQuery.addEventListener("change", callback);
+  return () => mediaQuery.removeEventListener("change", callback);
+}
+
+function getIsInstalled() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    Boolean(
+      (window.navigator as Navigator & { standalone?: boolean }).standalone,
+    )
+  );
+}
+
+function subscribeToPushSupport() {
+  return () => {};
+}
+
+function getPushSupport() {
+  return "serviceWorker" in navigator && "PushManager" in window;
+}
+
 export default function PwaManager() {
   const [installEvent, setInstallEvent] = useState<Event | null>(null);
-  const [isInstalled, setIsInstalled] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      (window.matchMedia("(display-mode: standalone)").matches ||
-        Boolean(
-          (window.navigator as Navigator & { standalone?: boolean }).standalone,
-        )),
+  const [installAccepted, setInstallAccepted] = useState(false);
+  const isStandalone = useSyncExternalStore(
+    subscribeToDisplayMode,
+    getIsInstalled,
+    () => false,
   );
-  const [pushSupported] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      "serviceWorker" in navigator &&
-      "PushManager" in window,
+  const pushSupported = useSyncExternalStore(
+    subscribeToPushSupport,
+    getPushSupport,
+    () => false,
   );
+  const isInstalled = isStandalone || installAccepted;
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
 
@@ -44,7 +65,7 @@ export default function PwaManager() {
       }).catch((error) => console.error("PWA service worker registration failed:", error));
     }
 
-    if ("serviceWorker" in navigator && "PushManager" in window) {
+    if (getPushSupport()) {
       navigator.serviceWorker.ready
         .then((registration) => registration.pushManager.getSubscription())
         .then((subscription) => setIsSubscribed(Boolean(subscription)))
@@ -62,7 +83,7 @@ export default function PwaManager() {
     };
     await promptEvent.prompt();
     const choice = await promptEvent.userChoice;
-    if (choice.outcome === "accepted") setIsInstalled(true);
+    if (choice.outcome === "accepted") setInstallAccepted(true);
     setInstallEvent(null);
   }
 

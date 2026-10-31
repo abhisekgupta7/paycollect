@@ -4,11 +4,13 @@ import { auth } from "@/auth";
 import {
   activateSubscriptionAfterPayment,
   getPayment,
-  updatePaymentStatus,
 } from "../services/payment.services";
 import { createNotification } from "@/app/features/notification/services/notification.service";
 import { markNotificationAsRead } from "@/app/features/notification/services/notification.service";
-import { verifyOrgPaymentAndEnqueueReceipt } from "../whatsapp/outbox.service";
+import {
+  verifyOrgPaymentAndEnqueueReceipt,
+  verifyPlatformPaymentAndEnqueueReceipts,
+} from "../whatsapp/outbox.service";
 
 export async function approvePaymentAction(
   paymentId: string,
@@ -54,7 +56,7 @@ export async function approvePaymentAction(
     }
 
     if (payment.context === "PLATFORM") {
-      await updatePaymentStatus(paymentId, "VERIFIED");
+      await verifyPlatformPaymentAndEnqueueReceipts(paymentId);
       await activateSubscriptionAfterPayment(payment.organizationId!);
     } else {
       try {

@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/sessionProvider";
 import Navbar from "@/components/Utility/Navbar";
 import Footer from "@/components/Utility/Footer";
 
-const ibmPlexSans = IBM_Plex_Sans({
+const dmsans = DM_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-ibm-plex-sans", // Creating a CSS variable for Tailwind
+  variable: "--font-dm-sans",
 });
 
 export const metadata: Metadata = {
@@ -38,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={` ${ibmPlexSans.variable} h-full antialiased`}>
+    <html lang="en" className={` ${dmsans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <Providers>
           <Navbar />

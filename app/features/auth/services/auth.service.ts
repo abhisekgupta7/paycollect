@@ -9,6 +9,7 @@ export interface CreateUserInput {
   email: string;
   name: string;
   password?: string;
+  phone?: string;
   image?: string;
 }
 
@@ -52,7 +53,7 @@ export async function findUserById(id: string) {
  * Create new user (for email/password signup)
  */
 export async function createUser(input: CreateUserInput) {
-  const { email, name, password, image } = input;
+  const { email, name, password, image, phone } = input;
 
   // Check if user already exists
   const existingUser = await findUserByEmail(email);
@@ -73,6 +74,7 @@ export async function createUser(input: CreateUserInput) {
       name,
       passwordHash,
       image,
+      phone,
       createdAt: new Date(),
       updatedAt: new Date(),
     })

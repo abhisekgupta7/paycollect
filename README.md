@@ -56,11 +56,20 @@ approved in the dashboard.
 
 ## WhatsApp verified-payment receipts
 
-Verified retailer (`ORG`) payments are written to a durable PostgreSQL
-WhatsApp outbox. A separate worker delivers the receipt through the configured
-local bridge without blocking payment verification. The database outbox is the
-source of truth; Redis, when configured, only wakes the worker early and the
-worker's recovery scan handles missed wakeups.
+Verified payments are written to a durable PostgreSQL WhatsApp outbox. A
+separate worker delivers messages through the configured local bridge without
+blocking payment verification. The database outbox is the source of truth;
+Redis, when configured, only wakes the worker early and the worker's recovery
+scan handles missed wakeups.
+
+Recipients are separate idempotent outbox events:
+
+- Organization payment: retailer/customer and wholesaler owner.
+- Platform subscription payment: wholesaler owner and platform admin.
+
+The owner WhatsApp number is collected during account signup. The platform
+admin number is configured on the worker/server and is never exposed to the
+browser.
 
 Apply the generated Drizzle migration before starting the worker:
 
@@ -83,13 +92,39 @@ WHATSAPP_MIN_SEND_INTERVAL_MS=4000
 WHATSAPP_BATCH_SIZE=5
 WHATSAPP_MAX_ATTEMPTS=5
 WHATSAPP_LOCK_TIMEOUT_MS=120000
+WHATSAPP_PLATFORM_ADMIN_PHONE=+977 9812345678
 ```
 
-The current schema has retailer phone numbers but no organization-owner phone
-field, so the implementation queues retailer receipts only. Add and verify an
-owner contact field before enabling owner receipt events. Self-hosted
-WhatsApp Web bridges can be blocked by WhatsApp; the provider adapter should be
-replaced with the official WhatsApp Business Cloud API for production use.
+### Local bridge setup
+
+The local bridge must be running and already linked to the WhatsApp account
+that should send the messages. The bridge must expose a compatible
+`POST /api/sendText` endpoint accepting:
+
+```json
+{
+  "chatId": "9779812345678@c.us",
+  "text": "message text"
+}
+```
+
+For a local WhatsApp Web bridge, start its session, open its dashboard, and
+scan the QR code from WhatsApp on the sending phone under **Linked devices**.
+Keep that phone connected and keep the bridge running. If the bridge supports
+an API key, set the same value in `WHATSAPP_API_KEY` and the bridge's API-key
+configuration; otherwise leave it empty.
+
+The worker also needs the same `DATABASE_URL` and, if used, `REDIS_URL` as the
+Next.js application. Start the application and worker in separate terminals:
+
+```bash
+npm run dev
+npm run worker:whatsapp
+```
+
+Do not commit `.env` files or real credentials. Self-hosted WhatsApp Web
+bridges can be blocked by WhatsApp; use the official WhatsApp Business Cloud
+API adapter for production traffic.
 
 ## Validation
 
