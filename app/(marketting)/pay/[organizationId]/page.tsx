@@ -404,9 +404,11 @@ export default function PublicPaymentPage() {
             <ArrowLeft className="w-4 h-4" />
             Back
           </Link>
-          <h1 className="text-3xl font-bold text-slate-900">Make Payment</h1>
+          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+            Make Payment
+          </h1>
           <p className="text-slate-600 mt-2">
-            Submit your payment proof for verification
+            Pay, upload proof, and check status.
           </p>
           <div className="mt-5 hidden flex-wrap gap-2 sm:flex">
             <Button
@@ -432,13 +434,12 @@ export default function PublicPaymentPage() {
           <Card className="mb-8 border-0 p-6 shadow-lg">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
+                <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
                   <ReceiptText className="h-5 w-5 text-blue-600" />
                   Retailer payment dashboard
                 </h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Enter the phone number registered with this wholesaler to view
-                  your payments.
+                  Use your registered phone to view payments.
                 </p>
               </div>
               {historyCustomer && (
@@ -582,11 +583,11 @@ export default function PublicPaymentPage() {
               <h3 className="text-base font-semibold text-slate-900 mb-2">
                 <div className="flex items-center gap-2">
                   <UploadCloud className="w-4 h-4 text-blue-500" />
-                  Upload Proof
+                  Payment proof
                 </div>
               </h3>
               <p className="text-xs text-slate-600">
-                Screenshot of payment confirmation
+                Upload your payment screenshot.
               </p>
             </div>
 

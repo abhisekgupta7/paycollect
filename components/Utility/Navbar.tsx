@@ -18,7 +18,7 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-[#e4e7ec] bg-white/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400 text-sm font-bold text-emerald-950">
             PC
@@ -40,12 +40,6 @@ export default function Navbar() {
             className="rounded-md px-3 py-2 text-sm font-medium text-[#667085] transition-colors hover:bg-[#eef2fa] hover:text-[#243b64]"
           >
             For wholesalers
-          </Link>
-          <Link
-            href="#faq"
-            className="rounded-md px-3 py-2 text-sm font-medium text-[#667085] transition-colors hover:bg-[#eef2fa] hover:text-[#243b64]"
-          >
-            FAQ
           </Link>
         </div>
 
